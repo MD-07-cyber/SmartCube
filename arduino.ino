@@ -9,6 +9,8 @@ const char* password = "987654321";
 // Server URL
 String serverURL = "http://10.10.70.170:5000/analyze"; // Flask server URL
 
+
+
 // Camera pin configuration for ESP32-CAM (AI-Thinker)
 #define PWDN_GPIO_NUM    -1
 #define RESET_GPIO_NUM   -1
