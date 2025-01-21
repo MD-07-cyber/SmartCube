@@ -6,12 +6,12 @@
 const char* ssid = "Redmi 12C";
 const char* password = "Dini16254030@";
 
-// Server URL (replace with your server's IP address)
-const char* serverUrl = "http://192.168.197.226:5000/mood";
+// Server URL
+const char* serverUrl = "http://192.168.197.226:5000/mood?client_id=esp32_cam";
 
 // Timer variables
 unsigned long previousMillis = 0;
-const long interval = 5000; // 5 seconds in milliseconds
+const long interval = 10000; // 30 seconds in milliseconds
 
 // Camera pin configuration for AI-Thinker ESP32-CAM
 #define CAMERA_MODEL_AI_THINKER
@@ -38,7 +38,6 @@ void setup() {
   Serial.begin(115200);
   Serial.println("Starting ESP32-CAM...");
 
-  // Connect to WiFi
   WiFi.begin(ssid, password);
   Serial.println("Connecting to WiFi...");
   while (WiFi.status() != WL_CONNECTED) {
@@ -49,7 +48,6 @@ void setup() {
   Serial.print("IP Address: ");
   Serial.println(WiFi.localIP());
 
-  // Initialize the camera
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
@@ -73,19 +71,18 @@ void setup() {
   config.pixel_format = PIXFORMAT_JPEG;
 
   if (psramFound()) {
-    config.frame_size = FRAMESIZE_UXGA; // Full resolution
-    config.jpeg_quality = 10;           // Lower value = higher quality
-    config.fb_count = 2;                // Use 2 frame buffers
+    config.frame_size = FRAMESIZE_UXGA;
+    config.jpeg_quality = 10;
+    config.fb_count = 2;
   } else {
-    config.frame_size = FRAMESIZE_SVGA; // Lower resolution
-    config.jpeg_quality = 12;           // Lower value = higher quality
-    config.fb_count = 1;                // Use 1 frame buffer
+    config.frame_size = FRAMESIZE_SVGA;
+    config.jpeg_quality = 12;
+    config.fb_count = 1;
   }
 
-  // Initialize the camera
   if (esp_camera_init(&config) != ESP_OK) {
     Serial.println("Camera initialization failed!");
-    while (true); // Halt execution if camera fails to initialize
+    while (true);
   }
   Serial.println("Camera initialized successfully!");
 }
@@ -93,7 +90,6 @@ void setup() {
 void loop() {
   unsigned long currentMillis = millis();
 
-  // Check if interval has passed
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
 
@@ -104,36 +100,20 @@ void loop() {
       return;
     }
 
-    Serial.println("Image captured, sending to server...");
     HTTPClient http;
-    http.begin(serverUrl); // Initialize HTTP connection
-    http.addHeader("Content-Type", "image/jpeg");
-    http.setTimeout(20000); // Set timeout to 20 seconds
+    if (http.begin(serverUrl)) {
+      http.addHeader("Content-Type", "image/jpeg");
+      http.setTimeout(20000);
 
-    int httpResponseCode = http.POST(fb->buf, fb->len);
-
-    if (httpResponseCode > 0) {
-      String response = http.getString();
-      Serial.println("Server Response: " + response);
-
-      // Parse "mood" field from response
-     int startIndex = response.indexOf("\"mood\":\"");
-      if (startIndex != -1) {
-        startIndex += 8; // Move past the "mood":" part
-        int endIndex = response.indexOf("\"", startIndex);
-        if (endIndex != -1) {
-          String mood = response.substring(startIndex, endIndex);
-          Serial.println("Detected Mood: " + mood);
-        } else {
-          Serial.println("Error: Unable to parse mood from response.");
-        }
-      } 
-    } else {
-      Serial.println("Error in sending image: " + String(httpResponseCode));
-      Serial.println("HTTP Error: " + http.errorToString(httpResponseCode));
+      int httpResponseCode = http.POST(fb->buf, fb->len);
+      if (httpResponseCode > 0) {
+        String response = http.getString();
+        Serial.println("Server Response: " + response);
+      } else {
+        Serial.println("Error: " + String(httpResponseCode));
+      }
+      http.end();
     }
-
-    http.end();
-    esp_camera_fb_return(fb); // Release memory for the frame buffer
+    esp_camera_fb_return(fb);
   }
 }
