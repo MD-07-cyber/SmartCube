@@ -1,36 +1,40 @@
 from flask import Flask, request, jsonify
 from deepface import DeepFace
 import cv2
+import numpy as np
 
 app = Flask(__name__)
 
-@app.route("/detect_mood", methods=["POST"])
-def detect_mood():
+@app.route('/mood', methods=['POST'])
+def mood_detection():
     try:
-        # Check if the image is in the request
-        if 'image' not in request.files:
-            return jsonify({"error": "No image provided"}), 400
+        # Receive image
+        file_bytes = request.data
+        np_arr = np.frombuffer(file_bytes, np.uint8)
+        img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
 
-        # Save the received image to a file
-        file = request.files['image']
-        file_path = "received_image.jpg"
-        file.save(file_path)
-
-        # Load the image using OpenCV
-        img = cv2.imread(file_path)
-
-        # Analyze the mood/emotion using DeepFace
-        analysis = DeepFace.analyze(img_path=file_path, actions=['emotion'], enforce_detection=False)
-
-        # Get the dominant emotion
+        # Perform emotion analysis
+        analysis = DeepFace.analyze(img, actions=['emotion'], enforce_detection=False)
         emotion = analysis['dominant_emotion']
 
-        # Return the detected mood
-        return jsonify({"mood": emotion})
+        # Generate response based on emotion
+        messages = {
+            "happy": "You look happy! Keep smiling 😊",
+            "sad": "It's okay to feel sad. Things will get better! 💙",
+            "angry": "Take a deep breath. Stay calm! 🧘",
+            "fear": "Don't be afraid! You're stronger than you think 💪",
+            "surprise": "Wow, you seem surprised! What's the good news? 🎉",
+            "neutral": "You seem neutral. Hope you're having a steady day! 🙂",
+            "disgust": "Is something bothering you? Let’s shake it off! 🌟"
+        }
+        message = messages.get(emotion, "I'm here for you, no matter what! ❤️")
+
+        # Send message back
+        return jsonify({"message": message})
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Error: {e}")
+        return jsonify({"message": "Error processing image"}), 500
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
-# The serial communication code has been moved to a separate file named serial_communication.py
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
