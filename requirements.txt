@@ -1,4 +1,5 @@
 Flask
 deepface
 opencv-python-headless
-tensorflow
+mediapipe
+numpy
