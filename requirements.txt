@@ -1,5 +1,7 @@
-Flask
+flask
 deepface
-opencv-python-headless
 mediapipe
+gunicorn
 numpy
+opencv-python
+

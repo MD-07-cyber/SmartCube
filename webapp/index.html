@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live Mood Feed</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f0f8ff;
+      padding: 2rem;
+      text-align: center;
+    }
+    .mood-item {
+      font-size: 1.2rem;
+      margin: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>💡 Real-Time Mood Tracker 💡</h1>
+  <div id="moodList">Loading moods...</div>
+
+  <script>
+    function fetchMoods() {
+      fetch("https://dini-mood-box.loca.lt/mood-log")  // your fixed tunnel
+        .then(res => res.json())
+        .then(data => {
+          const moodList = document.getElementById("moodList");
+          moodList.innerHTML = "";
+          data.reverse().forEach(entry => {
+            const emojiMap = {
+              happy: "😊", sad: "😢", angry: "😠", neutral: "😐",
+              surprise: "😲", fear: "😱", disgust: "🤢"
+            };
+            const emoji = emojiMap[entry.mood] || "❓";
+            const div = document.createElement("div");
+            div.className = "mood-item";
+            div.textContent = `${entry.time} — ${emoji} ${entry.mood}`;
+            moodList.appendChild(div);
+          });
+        });
+    }
+
+    fetchMoods();  // on load
+    setInterval(fetchMoods, 10000); // every 10 seconds
+  </script>
+</body>
+</html>
