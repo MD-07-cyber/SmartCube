@@ -1,0 +1,62 @@
+#include "WiFi.h"
+#include "AdafruitIO_WiFi.h"
+
+// Replace with your Wi-Fi credentials
+#define WIFI_SSID     "YourWiFiName"
+#define WIFI_PASS     "YourWiFiPassword"
+
+// Replace with your Adafruit IO credentials
+#define IO_USERNAME   "YourAdafruitUsername"
+#define IO_KEY        "YourAdafruitAIOKey"
+
+// Set up Adafruit IO object
+AdafruitIO_WiFi io(IO_USERNAME, IO_KEY, WIFI_SSID, WIFI_PASS);
+
+// Define feed
+AdafruitIO_Feed *light = io.feed("light");
+
+// Define the pin you want to control (GPIO 2 = onboard LED for many ESP32 boards)
+#define LED_PIN 2  // You can also try 5 or any GPIO with an external LED
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW); // Start with LED off
+
+  // Connect to Adafruit IO
+  Serial.print("Connecting to Adafruit IO");
+  io.connect();
+
+  // Set up callback
+  light->onMessage(handleMessage);
+
+  // Wait for a connection
+  while(io.status() < AIO_CONNECTED) {
+    Serial.print(".");
+    delay(500);
+  }
+
+  Serial.println("\nConnected to Adafruit IO");
+
+  // Request the last value for this feed
+  light->get();
+}
+
+void loop() {
+  io.run(); // Required to maintain connection
+}
+
+// This function is called whenever a new value is received
+void handleMessage(AdafruitIO_Data *data) {
+  int value = data->toInt();
+  Serial.print("Received from Adafruit IO: ");
+  Serial.println(value);
+
+  if (value == 1) {
+    digitalWrite(LED_PIN, HIGH);
+    Serial.println("LED ON");
+  } else {
+    digitalWrite(LED_PIN, LOW);
+    Serial.println("LED OFF");
+  }
+}
