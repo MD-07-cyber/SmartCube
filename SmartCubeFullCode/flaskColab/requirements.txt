@@ -1,0 +1,10 @@
+flask
+flask-ngrok
+pyngrok
+fer
+opencv-python-headless
+cvlib
+nest_asyncio
+requests
+
+

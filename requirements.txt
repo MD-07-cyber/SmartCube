@@ -1,7 +1,0 @@
-flask
-deepface
-mediapipe
-gunicorn
-numpy
-opencv-python
-
