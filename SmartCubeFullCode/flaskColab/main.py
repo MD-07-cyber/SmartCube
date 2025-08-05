@@ -8,9 +8,9 @@ Original file is located at
 """
 
 # 👇 STEP 1: Install dependencies
-!pip install flask flask-ngrok pyngrok fer opencv-python-headless cvlib --quiet
-!apt install libglib2.0-0 libsm6 libxrender-dev libxext6 -y > /dev/null
-!npm install -g localtunnel
+#!pip install flask flask-ngrok pyngrok fer opencv-python-headless cvlib --quiet
+#!apt install libglib2.0-0 libsm6 libxrender-dev libxext6 -y > /dev/null
+#!npm install -g localtunnel
 
 from flask import Flask, request, jsonify
 import cv2
