@@ -7,7 +7,7 @@ Original file is located at
     https://colab.research.google.com/drive/1p0TUsMnmXiWcTHz1ik1Bf_Ysf8b-azQC
 """
 
-# 👇 STEP 1: Install dependencies
+# STEP 1: Install dependencies
 #!pip install flask flask-ngrok pyngrok fer opencv-python-headless cvlib --quiet
 #!apt install libglib2.0-0 libsm6 libxrender-dev libxext6 -y > /dev/null
 #!npm install -g localtunnel
@@ -63,10 +63,10 @@ def detect_mood():
             if emotion not in ALLOWED_EMOTIONS:
                 emotion = "neutral"
             if score >= 0.6:
-             # 🔥 High confidence: use raw emotion
+                
                 final_emotion = emotion
             else:
-             # 🌊 Low confidence: use smoothing
+                
                 emotion_history.append(emotion)
                 final_emotion = Counter(emotion_history).most_common(1)[0][0]
 
@@ -100,19 +100,19 @@ threading.Thread(target=run_flask).start()
 lt_process = subprocess.Popen(['lt', '--port', '5000', '--subdomain', 'dini-mood-box'])
 time.sleep(5)
 
-print("✅ Your fixed LocalTunnel URL is:")
+print("Your fixed LocalTunnel URL is:")
 print("http://dini-mood-box.loca.lt")
 
 try:
     res = requests.get("http://dini-mood-box.loca.lt/get-mood?client_id=test")
     if res.status_code in [200, 404]:
-        print("✅ LocalTunnel is LIVE and responding.")
+        print("LocalTunnel is LIVE and responding.")
     else:
-        print("⚠️ Unexpected response code:", res.status_code)
+        print("Unexpected response code:", res.status_code)
 except Exception as e:
-    print("❌ LocalTunnel is not reachable.")
+    print("LocalTunnel is not reachable.")
     print(e)
 
 while True:
-    print("🌀 Keeping Colab alive...")
+    print("Keeping Colab alive...")
     time.sleep(60)

@@ -1,20 +1,15 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include "esp_camera.h"
-#include <WebServer.h>  // <-- Added for stream
+#include <WebServer.h>
 
-// ====== Wi-Fi Credentials ======
 const char* ssid = "Redmi 12C";
 const char* password = "Dini16254030@";
-
-// ====== Flask Server via LocalTunnel ======
 const char* serverUrl = "http://dini-mood-box.loca.lt/mood?client_id=esp32_cam";
 
-// ====== Timer Settings ======
 unsigned long previousMillis = 0;
-const long interval = 10000; // Capture every 10 seconds
+const long interval = 10000;
 
-// ====== AI Thinker ESP32-CAM Pin Definitions ======
 #define PWDN_GPIO_NUM     32
 #define RESET_GPIO_NUM    -1
 #define XCLK_GPIO_NUM      0
@@ -32,13 +27,10 @@ const long interval = 10000; // Capture every 10 seconds
 #define HREF_GPIO_NUM     23
 #define PCLK_GPIO_NUM     22
 
-// ====== Stream Server ======
-WebServer server(80);  // Port 80 for live stream
+WebServer server(80);
 
-// Stream handler
 void handleStream() {
   WiFiClient client = server.client();
-
   String response = "HTTP/1.1 200 OK\r\n";
   response += "Content-Type: multipart/x-mixed-replace; boundary=frame\r\n\r\n";
   server.sendContent(response);
@@ -46,7 +38,7 @@ void handleStream() {
   while (1) {
     camera_fb_t* fb = esp_camera_fb_get();
     if (!fb) {
-      Serial.println("❌ Camera capture failed for stream.");
+      Serial.println("Camera capture failed for stream.");
       continue;
     }
 
@@ -59,16 +51,14 @@ void handleStream() {
     esp_camera_fb_return(fb);
 
     if (!client.connected()) break;
-    delay(50);  // Frame rate ~20 fps
+    delay(50);
   }
 }
 
-// ====== Setup ======
 void setup() {
   Serial.begin(115200);
   Serial.println("Booting...");
 
-  // Connect to Wi-Fi
   WiFi.begin(ssid, password);
   Serial.print("Connecting to WiFi");
   while (WiFi.status() != WL_CONNECTED) {
@@ -79,7 +69,6 @@ void setup() {
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
-  // Configure Camera
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
   config.ledc_timer = LEDC_TIMER_0;
@@ -101,13 +90,10 @@ void setup() {
   config.pin_reset = RESET_GPIO_NUM;
   config.xclk_freq_hz = 20000000;
   config.pixel_format = PIXFORMAT_JPEG;
-
-  // Lower resolution for faster upload
-  config.frame_size = FRAMESIZE_VGA;   // Use QVGA for smaller, faster
+  config.frame_size = FRAMESIZE_VGA;
   config.jpeg_quality = 12;
   config.fb_count = 1;
 
-  // Initialize Camera
   if (esp_camera_init(&config) != ESP_OK) {
     Serial.println("Camera init failed!");
     while (true);
@@ -115,15 +101,13 @@ void setup() {
 
   Serial.println("Camera ready.");
 
-  // Start stream server
   server.on("/stream", HTTP_GET, handleStream);
   server.begin();
-  Serial.println("📡 Stream ready. Access /stream in browser.");
+  Serial.println("Stream ready. Access /stream in browser.");
 }
 
-// ====== Loop ======
 void loop() {
-  server.handleClient();  // Handle stream requests
+  server.handleClient();
 
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
@@ -131,18 +115,16 @@ void loop() {
 
     Serial.println("\nCapturing image...");
 
-    // Capture image
     camera_fb_t* fb = esp_camera_fb_get();
     if (!fb) {
-      Serial.println("❌ Capture failed!");
+      Serial.println("Capture failed!");
       return;
     }
 
-    Serial.println("✅ Image captured. Sending to Flask...");
+    Serial.println("Image captured. Sending to Flask...");
 
-    // Send image to server
     HTTPClient http;
-    http.setTimeout(20000); // 20-second timeout
+    http.setTimeout(20000);
 
     if (http.begin(serverUrl)) {
       http.addHeader("Content-Type", "image/jpeg");
@@ -151,17 +133,17 @@ void loop() {
 
       if (httpResponseCode > 0) {
         String response = http.getString();
-        Serial.println("✅ Server response: " + response);
+        Serial.println("Server response: " + response);
       } else {
-        Serial.print("❌ POST failed. HTTP error: ");
+        Serial.print("POST failed. HTTP error: ");
         Serial.println(httpResponseCode);
       }
 
       http.end();
     } else {
-      Serial.println("❌ HTTP connection failed.");
+      Serial.println("HTTP connection failed.");
     }
 
-    esp_camera_fb_return(fb); // Free memory
+    esp_camera_fb_return(fb);
   }
 }
