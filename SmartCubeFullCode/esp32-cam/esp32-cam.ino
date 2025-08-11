@@ -1,17 +1,14 @@
-
-
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include "esp_camera.h"
+#include <WebServer.h>  // <-- Added for stream
 
 // ====== Wi-Fi Credentials ======
 const char* ssid = "Redmi 12C";
 const char* password = "Dini16254030@";
 
 // ====== Flask Server via LocalTunnel ======
-// Replace this with your updated LT URL if it changes
 const char* serverUrl = "http://dini-mood-box.loca.lt/mood?client_id=esp32_cam";
-
 
 // ====== Timer Settings ======
 unsigned long previousMillis = 0;
@@ -35,6 +32,38 @@ const long interval = 10000; // Capture every 10 seconds
 #define HREF_GPIO_NUM     23
 #define PCLK_GPIO_NUM     22
 
+// ====== Stream Server ======
+WebServer server(80);  // Port 80 for live stream
+
+// Stream handler
+void handleStream() {
+  WiFiClient client = server.client();
+
+  String response = "HTTP/1.1 200 OK\r\n";
+  response += "Content-Type: multipart/x-mixed-replace; boundary=frame\r\n\r\n";
+  server.sendContent(response);
+
+  while (1) {
+    camera_fb_t* fb = esp_camera_fb_get();
+    if (!fb) {
+      Serial.println("❌ Camera capture failed for stream.");
+      continue;
+    }
+
+    server.sendContent("--frame\r\n");
+    server.sendContent("Content-Type: image/jpeg\r\n");
+    server.sendContent("Content-Length: " + String(fb->len) + "\r\n\r\n");
+    server.sendContent((const char*)fb->buf, fb->len);
+    server.sendContent("\r\n");
+
+    esp_camera_fb_return(fb);
+
+    if (!client.connected()) break;
+    delay(50);  // Frame rate ~20 fps
+  }
+}
+
+// ====== Setup ======
 void setup() {
   Serial.begin(115200);
   Serial.println("Booting...");
@@ -85,9 +114,17 @@ void setup() {
   }
 
   Serial.println("Camera ready.");
+
+  // Start stream server
+  server.on("/stream", HTTP_GET, handleStream);
+  server.begin();
+  Serial.println("📡 Stream ready. Access /stream in browser.");
 }
 
+// ====== Loop ======
 void loop() {
+  server.handleClient();  // Handle stream requests
+
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
