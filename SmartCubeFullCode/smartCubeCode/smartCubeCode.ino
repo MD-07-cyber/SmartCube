@@ -50,7 +50,7 @@ bool dfplayerAvailable = false;
 
 // ==================== LED Strip ====================
 #define LED_PIN     21
-#define NUM_LEDS    60
+#define NUM_LEDS    120
 #define CHIPSET     WS2812
 #define COLOR_ORDER GRB
 CRGB leds[NUM_LEDS];
